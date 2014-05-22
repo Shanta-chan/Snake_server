@@ -23,6 +23,38 @@ int client2 = 0;
 int listener;
 int msg1, msg2;
 
+void stop()
+{
+    close(client1);
+    close(client2);
+    client1 = 0;
+    client2 = 0;
+}
+void* SendReady(void *param)
+{
+    int ready = 5;
+    send(client1, &ready, sizeof(int), 0);
+    send(client2, &ready, sizeof(int), 0);
+    return 0;
+}
+
+void waiting()
+{
+    while (clients != 2)
+    {
+        printf("Waiting, %d", clients);
+        // Waiting for clients;
+    }
+    
+    pthread_t r;
+    pthread_create(&r, NULL, SendReady, NULL);
+    
+    void *ret;
+    
+    pthread_join(r, &ret);
+}
+
+
 void* f1(void *param)
 {
     while (!shouldStop)
@@ -44,6 +76,13 @@ void* f1(void *param)
                 client1 = accept(listener, NULL, NULL);
                 clients++;
                 printf("Clients: %d", clients);
+                break;
+            }
+            case -2:
+            {
+                send(client1, NULL, sizeof(int), 0);
+                shouldStop = true;
+                stop();
                 break;
             }
             default:
@@ -79,6 +118,13 @@ void* f2(void *param)
                 client1 = accept(listener, NULL, NULL);
                 clients++;
                 printf("Clients: %d", clients);
+                break;
+            }
+            case -2:
+            {
+                send(client1, NULL, sizeof(int), 0);
+                shouldStop = true;
+                stop();
                 break;
             }
             default:
@@ -129,8 +175,10 @@ void start()
 }
 
 
+
 int main()
 {
     start();
+    //waiting();
 }
 
